@@ -11,7 +11,7 @@
 
 ## Introduction
 
-`cirBEM` is an R/Bioconductor package for detecting circadian rhythmicity in
+`cirBEM` is an R package for detecting circadian rhythmicity in
 DNA methylation beta values. The package fits per-CpG beta-regression cosinor
 models with sine and cosine terms for cyclic time effects.
 
