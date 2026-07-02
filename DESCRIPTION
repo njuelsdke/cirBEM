@@ -4,7 +4,8 @@ Version: 0.99.0
 Authors@R: person("yx", "h",
     email = "yixiang.hong@uth.tmc.edu", role = c("aut", "cre"))
 Description: Fits cosinor-based beta regression models for detecting circadian
-    rhythmicity in DNA methylation array data. Supports fixed-effects
+    rhythmicity in DNA methylation array data using Template Model Builder
+    (TMB) for efficient likelihood optimization. Supports fixed-effects
     (cross-sectional) and mixed-effects (repeated measures) designs with
     configurable period. Implements empirical Bayes shrinkage of the beta
     distribution precision parameter across CpG sites, analogous to limma's
