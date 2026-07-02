@@ -169,20 +169,6 @@ head(res$phase)
 head(res$mesor_response)
 ```
 
-# Empirical Bayes Shrinkage
-
-The precision parameter phi controls the variance of the beta
-distribution. With small sample sizes, per-CpG estimates of phi are
-noisy. Empirical Bayes shrinkage borrows strength across CpGs by
-estimating a Normal prior on log(phi) from a random pilot subset of up
-to 10,000 CpGs, then incorporating that prior into the full genome-wide
-fit via penalized likelihood.
-
-```{r eb-shrinkage}
-# View the estimated prior
-metadata(se_demo)$cirBEM$ebPrior
-```
-
 # Visualization
 
 ```{r plots, fig.width=8, fig.height=5}
