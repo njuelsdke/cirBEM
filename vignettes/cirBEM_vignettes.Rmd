@@ -1,9 +1,5 @@
 ---
 title: "Detecting Circadian Rhythmicity in DNA Methylation with cirBEM"
-author:
-  - name: "AUTHOR_FIRST AUTHOR_LAST"
-    affiliation: "Institution"
-date: "`r Sys.Date()`"
 output:
   BiocStyle::html_document:
     toc: true
