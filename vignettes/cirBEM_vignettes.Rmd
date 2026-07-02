@@ -25,15 +25,24 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-cirBEM is an R package for detecting
-circadian rhythmicity in DNA methylation data. The package fits beta regression
-models with cosinor terms to account for the bounded nature of methylation beta
-values and supports repeated-measures designs through subject-specific random
-effects. To improve stability in genome-wide analyses, cirBEM also incorporates
-empirical Bayesian shrinkage of the beta-regression precision parameter.
+CirBEM is an R package for detecting circadian rhythmicity in DNA methylation
+data. DNA methylation beta values are bounded between 0 and 1 and often exhibit
+strong mean-variance dependence, making standard Gaussian cosinor models less
+well suited for modeling methylation dynamics. In addition, circadian
+methylation studies commonly involve repeated measurements from the same
+subjects, requiring methods that can account for within-subject correlation. Existing rhythmicity detection methods are often designed for approximately Gaussian gene-expression measurements or independent samples. 
+
+cirBEM addresses these issues by fitting cosinor-based beta regression models
+for methylation beta values. The model represents rhythmic methylation patterns
+using sine and cosine terms, while optional subject-specific random intercepts
+account for repeated measurements. To improve stability in genome-wide analyses,
+cirBEM also incorporates empirical Bayesian shrinkage of the beta-regression
+precision parameter.
 
 This vignette demonstrates how to use cirBEM for:
-1. Fitting beta-regression cosinor models to methylation data.
+
+1. Fitting fixed- and mixed-effect beta-regression cosinor models to methylation
+   data.
 2. Detecting rhythmic CpG sites and ranking results.
 3. Visualizing fitted circadian methylation patterns.
 
