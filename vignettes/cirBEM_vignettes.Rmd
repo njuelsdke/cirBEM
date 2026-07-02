@@ -54,31 +54,9 @@ if (!require("BiocManager", quietly = TRUE))
 BiocManager::install("cirBEM")
 ```
 
-# Quick Start
-
-```{r quickstart, eval=FALSE}
-library(cirBEM)
-
-# Start from a SummarizedExperiment with methylation beta values
-se <- your_summarized_experiment
-
-# Fit with repeated measures and EB shrinkage
-se <- fitCosinor(se, time_col = "time", subject_col = "id")
-
-# View top rhythmic CpGs
-topCpGs(se, n = 10)
-
-# Visualize
-plotCosinorFit(se)
-```
-
 # Data Preparation
 
-cirBEM expects a `SummarizedExperiment` with:
-
-- An assay containing methylation beta values (CpGs x samples)
-- `colData` with at minimum a numeric time column (in hours)
-- Optionally, a subject identifier column for repeated measures
+cirBEM expects a `SummarizedExperiment` with: 1. An assay containing methylation beta values (CpGs x samples); 2.`colData` with at minimum a numeric time column (in hours) 3.Optionally, a subject identifier column for repeated measures.
 
 The package includes example data (3000 CpGs, 8 subjects, 6 timepoints):
 
@@ -144,44 +122,58 @@ se_demo <- fitCosinor(se_demo,
 
 # Interpreting Results
 
-All results are stored in the `SummarizedExperiment`:
+The output of `fitCosinor()` is the input `SummarizedExperiment` object with
+model results appended to `rowData()` and analysis-level information stored in
+`metadata()`.
 
-- `rowData(se_demo)` - per-CpG results (coefficients, circadian
-  parameters, test statistics, convergence)
-- `metadata(se_demo)$cirBEM` - design info, EB prior, test settings, and fit summary
+Specifically:
 
-## Top CpGs
+- `rowData(se_demo)` contains per-CpG model estimates, circadian summary
+  statistics, hypothesis test results, adjusted p-values, and convergence
+  indicators.
+- `metadata(se_demo)$cirBEM` contains analysis-level information, including
+  the model design, empirical Bayes prior estimates, test settings, and fitting
+  summary.
+
+## Top-ranked CpG sites
+
+The function `topCpGs()` returns the top-ranked CpG sites according to the
+rhythmicity test p-value or adjusted p-value, depending on the available result
+columns.
 
 ```{r top-cpgs}
 topCpGs(se_demo, n = 10)
 ```
 
-## Circadian Parameters
+## Circadian parameter estimates
 
-All per-CpG results are appended to `rowData(se_demo)`:
+All per-CpG model results are available from `rowData(se_demo)`:
 
-In mixed-effects mode, response-scale amplitude and MESOR are
-population-average summaries: the fitted curve is averaged
-over the random subject intercept distribution rather than evaluated at
-`u = 0`.
-
-```{r params}
+```{r}
 res <- rowData(se_demo)
-
-# Amplitude on the probability scale
-head(res$amplitude_response)
-
-# Phase in hours
-head(res$phase)
-
-# MESOR (rhythm-adjusted mean)
-head(res$mesor_response)
 ```
+
+The main circadian summaries are:
+
+- `amplitude_response`: estimated oscillation amplitude on the methylation
+  beta-value scale.
+- `phase`: estimated timing of peak methylation, reported in hours.
+- `mesor_response`: rhythm-adjusted mean methylation level on the beta-value
+  scale.
+
+In mixed-effects mode, response-scale summaries are reported as
+population-average quantities. That is, the fitted methylation curve is averaged
+over the subject-specific random-intercept distribution, rather than evaluated
+at a random effect of zero. This distinction is important because the inverse
+logit transformation is nonlinear.
 
 # Visualization
 
+The fitted circadian methylation pattern can be visualized using
+`plotCosinorFit()`. By default, the function displays fitted 24-hour cosinor
+curves for the top-ranked CpG sites.
+
 ```{r plots, fig.width=8, fig.height=5}
-# Fitted curves for top CpGs
 plotCosinorFit(se_demo)
 ```
 
