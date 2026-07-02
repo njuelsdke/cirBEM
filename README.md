@@ -79,7 +79,7 @@ plotCosinorFit(fit, cpgs = topCpGs(fit, n = 3)$cpg)
 ## Parallel Fitting
 
 By default, `fitCosinor()` uses `BiocParallel::MulticoreParam()` for parallel
-fitting on Unix-like systems. For controlled serial fitting:
+fitting on Linux systems. For controlled serial fitting:
 
 ```r
 fit <- fitCosinor(
