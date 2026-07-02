@@ -1,28 +1,57 @@
+<table>
+  <tr>
+    <td width="170" align="center">
+      <img src="man/figures/logo.png" width="150" alt="cirBEM logo" />
+    </td>
+    <td>
+      <h1>cirBEM: beta-regression cosinor models for circadian methylation analysis</h1>
+    </td>
+  </tr>
+</table>
 
-<img src="man/figures/logo.png" align="right" width="140" />
+## Introduction
 
-# cirBEM
+`cirBEM` is an R/Bioconductor package for detecting circadian rhythmicity in
+DNA methylation beta values. The package fits per-CpG beta-regression cosinor
+models with sine and cosine terms for cyclic time effects.
 
-Beta-regression cosinor modeling for detecting circadian rhythmicity in DNA
-methylation beta values.
+The package supports fixed-effect designs and repeated-measures designs with a
+subject-level random intercept. It also provides empirical Bayes shrinkage of
+the beta-distribution precision parameter across CpG sites to stabilize
+genome-wide inference.
 
-`cirBEM` fits per-CpG beta regression models with sine and cosine circadian
-terms. It supports fixed-effect and repeated-measures designs, optional
-empirical Bayes shrinkage of the precision parameter, and returns the fitted
-results in a `SummarizedExperiment`.
+The main output is a `SummarizedExperiment` with fitted per-CpG results appended
+to `rowData()`, including coefficient estimates, response-scale amplitude,
+phase, MESOR, test statistics, p-values, adjusted p-values, and convergence
+status.
 
 ## Installation
 
 Install the package from source:
 
 ```r
-install.packages("cirBEM", repos = NULL, type = "source")
+install.packages(
+    "cirBEM",
+    repos = NULL,
+    type = "source"
+)
 ```
 
-## Basic Usage
+If installing from a local package directory:
 
-Input data should be a `SummarizedExperiment` with methylation beta values in
-an assay and sample-level time information in `colData`.
+```r
+install.packages(
+    "D:/data/data/uth/rythm/cirBEM",
+    repos = NULL,
+    type = "source",
+    INSTALL_opts = "--preclean"
+)
+```
+
+## Usage
+
+Input data should be a `SummarizedExperiment` with methylation beta values in an
+assay and sample-level collection time in `colData()`.
 
 ```r
 library(cirBEM)
@@ -35,8 +64,18 @@ fit <- fitCosinor(
 )
 ```
 
-If `subject_col` is supplied, `fitCosinor()` uses a mixed model with a random
-subject intercept. If `subject_col = NULL`, it uses a fixed-effect model.
+If `subject_col` is supplied, `fitCosinor()` uses a mixed-effects model by
+default. If `subject_col = NULL`, it uses a fixed-effects model. The model type
+can also be set explicitly:
+
+```r
+fit <- fitCosinor(
+    se,
+    time_col = "time",
+    subject_col = "subject",
+    mode = "mixed"
+)
+```
 
 Top rhythmic CpGs can be extracted with:
 
@@ -50,22 +89,33 @@ Fitted curves can be visualized with:
 plotCosinorFit(fit, cpgs = topCpGs(fit, n = 3)$cpg)
 ```
 
-## Output
+## Parallel Fitting
 
-Results are stored in:
+By default, `fitCosinor()` uses `BiocParallel::MulticoreParam()` for parallel
+fitting on Unix-like systems. For controlled serial fitting:
 
 ```r
-rowData(fit)
-metadata(fit)$cirBEM
+fit <- fitCosinor(
+    se,
+    time_col = "time",
+    subject_col = "subject",
+    BPPARAM = BiocParallel::SerialParam()
+)
 ```
 
-The per-CpG result table includes coefficient estimates, response-scale
-amplitude, phase, MESOR, test statistics, p-values, adjusted p-values, and
-convergence status. Coefficient standard errors are included when
-`test_method = "Wald"`.
+For socket-based parallel fitting:
+
+```r
+fit <- fitCosinor(
+    se,
+    time_col = "time",
+    subject_col = "subject",
+    BPPARAM = BiocParallel::SnowParam(workers = 4, type = "SOCK")
+)
+```
 
 ## Main Functions
 
 - `fitCosinor()` fits circadian beta-regression models across CpG sites.
-- `topCpGs()` returns the top CpGs ranked by significance.
+- `topCpGs()` returns top CpGs ranked by statistical significance.
 - `plotCosinorFit()` plots raw beta values and fitted cosinor curves.
