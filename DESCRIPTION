@@ -1,0 +1,38 @@
+Package: cirBEM
+Title: Beta Regression Cosinor Models for Circadian Methylation Analysis
+Version: 0.99.0
+Authors@R: person("yx", "h",
+    email = "yixiang.hong@uth.tmc.edu", role = c("aut", "cre"))
+Description: Fits cosinor-based beta regression models for detecting circadian
+    rhythmicity in DNA methylation array data. Supports fixed-effects
+    (cross-sectional) and mixed-effects (repeated measures) designs with
+    configurable period. Implements empirical Bayes shrinkage of the beta
+    distribution precision parameter across CpG sites, analogous to limma's
+    moderated variance, to improve genome-wide inference. Provides amplitude,
+    phase, and MESOR estimation on both logit-link and response scales.
+License: GPL (>= 3) + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+biocViews: Epigenetics, DNAMethylation, TimeCourse, Regression,
+    DifferentialMethylation, Software
+Depends: R (>= 4.3.0)
+Imports:
+    SummarizedExperiment,
+    S4Vectors,
+    BiocParallel,
+    TMB,
+    stats,
+    ggplot2
+LinkingTo:
+    TMB,
+    RcppEigen
+Suggests:
+    knitr,
+    rmarkdown,
+    BiocStyle,
+    BiocGenerics,
+    RUnit,
+    limma,
+    cowplot
+VignetteBuilder: knitr

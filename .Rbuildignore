@@ -1,0 +1,6 @@
+^\.Rproj\.user$
+^.*\.Rproj$
+^\.Rhistory$
+^\.RData$
+^src/.*\.(dll|so|o)$
+^inst/logo$

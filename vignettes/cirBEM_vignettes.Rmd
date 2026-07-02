@@ -1,0 +1,197 @@
+---
+title: "Detecting Circadian Rhythmicity in DNA Methylation with cirBEM"
+author:
+  - name: "AUTHOR_FIRST AUTHOR_LAST"
+    affiliation: "Institution"
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{cirBEM Introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    message = FALSE,
+    warning = FALSE
+)
+```
+
+# Introduction
+
+cirBEM is an R package for detecting
+circadian rhythmicity in DNA methylation data. The package fits beta regression
+models with cosinor terms to account for the bounded nature of methylation beta
+values and supports repeated-measures designs through subject-specific random
+effects. To improve stability in genome-wide analyses, cirBEM also incorporates
+empirical Bayesian shrinkage of the beta-regression precision parameter.
+
+This vignette demonstrates how to use cirBEM for:
+1. Fitting beta-regression cosinor models to methylation data.
+2. Detecting rhythmic CpG sites and ranking results.
+3. Visualizing fitted circadian methylation patterns.
+
+# Installation
+
+```{r install, eval=FALSE}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("cirBEM")
+```
+
+# Quick Start
+
+```{r quickstart, eval=FALSE}
+library(cirBEM)
+
+# Start from a SummarizedExperiment with methylation beta values
+se <- your_summarized_experiment
+
+# Fit with repeated measures and EB shrinkage
+se <- fitCosinor(se, time_col = "time", subject_col = "id")
+
+# View top rhythmic CpGs
+topCpGs(se, n = 10)
+
+# Visualize
+plotCosinorFit(se)
+```
+
+# Data Preparation
+
+cirBEM expects a `SummarizedExperiment` with:
+
+- An assay containing methylation beta values (CpGs x samples)
+- `colData` with at minimum a numeric time column (in hours)
+- Optionally, a subject identifier column for repeated measures
+
+The package includes example data (3000 CpGs, 8 subjects, 6 timepoints):
+
+```{r data-prep}
+library(cirBEM)
+library(SummarizedExperiment)
+
+# Load bundled example data
+example <- readRDS(system.file("extdata", "example_data.rds",
+    package = "cirBEM"))
+se <- example$se
+se
+```
+
+For a fast vignette build, the fitted examples below use a small subset of the
+bundled dataset.
+
+```{r data-subset}
+se_demo <- se[seq_len(100), ]
+```
+
+# Cross-Sectional Analysis (Fixed-Effects)
+
+When each subject is measured at a single timepoint:
+
+```{r fixed, eval=FALSE}
+# Use one timepoint per subject for demonstration, with collection times
+# staggered across subjects so the fixed-effects model has time variation.
+cd <- as.data.frame(colData(se_demo))
+subjects <- unique(cd$subject)
+cross_idx <- unlist(lapply(seq_along(subjects), function(i) {
+    idx <- which(cd$subject == subjects[i])
+    idx[((i - 1) %% length(idx)) + 1]
+}))
+se_cross <- se_demo[, cross_idx]
+
+se_cross <- fitCosinor(se_cross,
+    time_col = "time",
+    subject_col = NULL,  # no repeated measures
+    eb_shrink = TRUE,
+    min_cpgs = 50,
+    BPPARAM = BiocParallel::SerialParam(),
+    verbose = TRUE
+)
+se_cross
+```
+
+# Longitudinal Analysis (Mixed-Effects)
+
+When subjects have repeated measurements across time:
+
+```{r mixed}
+se_demo <- fitCosinor(se_demo,
+    time_col = "time",
+    subject_col = "subject",
+    eb_shrink = TRUE,
+    min_cpgs = 50,
+    BPPARAM = BiocParallel::SerialParam(),
+    verbose = TRUE
+)
+
+```
+
+# Interpreting Results
+
+All results are stored in the `SummarizedExperiment`:
+
+- `rowData(se_demo)` - per-CpG results (coefficients, circadian
+  parameters, test statistics, convergence)
+- `metadata(se_demo)$cirBEM` - design info, EB prior, test settings, and fit summary
+
+## Top CpGs
+
+```{r top-cpgs}
+topCpGs(se_demo, n = 10)
+```
+
+## Circadian Parameters
+
+All per-CpG results are appended to `rowData(se_demo)`:
+
+In mixed-effects mode, response-scale amplitude and MESOR are
+population-average summaries: the fitted curve is averaged
+over the random subject intercept distribution rather than evaluated at
+`u = 0`.
+
+```{r params}
+res <- rowData(se_demo)
+
+# Amplitude on the probability scale
+head(res$amplitude_response)
+
+# Phase in hours
+head(res$phase)
+
+# MESOR (rhythm-adjusted mean)
+head(res$mesor_response)
+```
+
+# Empirical Bayes Shrinkage
+
+The precision parameter phi controls the variance of the beta
+distribution. With small sample sizes, per-CpG estimates of phi are
+noisy. Empirical Bayes shrinkage borrows strength across CpGs by
+estimating a Normal prior on log(phi) from a random pilot subset of up
+to 10,000 CpGs, then incorporating that prior into the full genome-wide
+fit via penalized likelihood.
+
+```{r eb-shrinkage}
+# View the estimated prior
+metadata(se_demo)$cirBEM$ebPrior
+```
+
+# Visualization
+
+```{r plots, fig.width=8, fig.height=5}
+# Fitted curves for top CpGs
+plotCosinorFit(se_demo)
+```
+
+# Session Info
+
+```{r session}
+sessionInfo()
+```
