@@ -1,0 +1,195 @@
+---
+title: "Detecting Circadian Rhythmicity in DNA Methylation with cirBEM"
+author:
+  - name: "AUTHOR_FIRST AUTHOR_LAST"
+    affiliation: "Institution"
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 3
+vignette: >
+  %\VignetteIndexEntry{cirBEM Introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>",
+    message = FALSE,
+    warning = FALSE
+)
+```
+
+# Introduction
+
+DNA methylation beta values are bounded in (0, 1), making standard
+linear models inappropriate for modeling circadian rhythmicity at CpG
+sites. **cirBEM** addresses this by fitting beta regression models
+with cosinor terms, properly accounting for the bounded nature of
+methylation array data.
+
+Key features:
+
+- **Beta regression** with logit link for methylation proportions
+- **Cosinor model** (sin/cos terms) for circadian rhythmicity
+- **Fixed-effects** mode for cross-sectional designs (one sample per
+  subject)
+- **Mixed-effects** mode for repeated measures designs (multiple
+  timepoints per subject)
+- **Empirical Bayes shrinkage** of the precision parameter (phi)
+  across CpG sites, analogous to limma's moderated variance
+
+# Installation
+
+```{r install, eval=FALSE}
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("cirBEM")
+```
+
+# Quick Start
+
+```{r quickstart, eval=FALSE}
+library(cirBEM)
+
+# Load your data as a SummarizedExperiment
+se <- makeCircMethylSE(beta_matrix, sample_metadata)
+
+# Fit with repeated measures and EB shrinkage
+se <- fitCosinor(se, time_col = "time", subject_col = "id")
+
+# View top rhythmic CpGs
+topCpGs(se, n = 10)
+
+# Visualize
+plotCosinorFit(se)
+plotVolcano(se)
+```
+
+# Data Preparation
+
+cirBEM expects a `SummarizedExperiment` with:
+
+- An assay containing methylation beta values (CpGs x samples)
+- `colData` with at minimum a numeric time column (in hours)
+- Optionally, a subject identifier column for repeated measures
+
+The package includes example data (100 CpGs, 8 subjects, 6 timepoints):
+
+```{r data-prep}
+library(cirBEM)
+library(SummarizedExperiment)
+
+# Load bundled example SummarizedExperiment
+se <- readRDS(system.file("extdata", "example_se.rds", package = "cirBEM"))
+se
+```
+
+# Cross-Sectional Analysis (Fixed-Effects)
+
+When each subject is measured at a single timepoint:
+
+```{r fixed, eval=FALSE}
+# Use only first timepoint per subject for demonstration
+first_tp <- !duplicated(colData(se)$subject)
+se_cross <- se[, first_tp]
+
+se_cross <- fitCosinor(se_cross,
+    time_col = "time",
+    subject_col = NULL,  # no repeated measures
+    eb_shrink = TRUE,
+    BPPARAM = BiocParallel::SerialParam(),
+    verbose = TRUE
+)
+se_cross
+```
+
+# Longitudinal Analysis (Mixed-Effects)
+
+When subjects have repeated measurements across time:
+
+```{r mixed}
+se <- fitCosinor(se,
+    time_col = "time",
+    subject_col = "subject",
+    eb_shrink = TRUE,
+    BPPARAM = BiocParallel::SerialParam(),
+    verbose = TRUE
+)
+```
+
+# Interpreting Results
+
+All results are stored in the `SummarizedExperiment`:
+
+- `rowData(se)$cirBEM` — per-CpG results (coefficients, circadian
+  parameters, test statistics, convergence)
+- `metadata(se)$cirBEM` — design info and EB prior
+
+## Top CpGs
+
+```{r top-cpgs}
+topCpGs(se, n = 10)
+```
+
+## Circadian Parameters
+
+All per-CpG results are in `rowData(se)$cirBEM`:
+
+```{r params}
+res <- rowData(se)$cirBEM
+
+# Amplitude on the probability scale
+head(res$amplitude_response)
+
+# Acrophase in hours
+head(res$acrophase_hours)
+
+# MESOR (rhythm-adjusted mean)
+head(res$mesor_response)
+```
+
+# Empirical Bayes Shrinkage
+
+The precision parameter phi controls the variance of the beta
+distribution. With small sample sizes, per-CpG estimates of phi are
+noisy. Empirical Bayes shrinkage borrows strength across CpGs by
+estimating a Normal prior on log(phi) and incorporating it into the
+model via penalized likelihood.
+
+```{r eb-shrinkage}
+# View the estimated prior
+metadata(se)$cirBEM$ebPrior
+
+# Visualize shrinkage
+plotPrecisionShrinkage(se)
+```
+
+# Visualization
+
+```{r plots, fig.width=8, fig.height=5}
+# Fitted curves for top CpGs
+plotCosinorFit(se)
+
+# Volcano plot
+plotVolcano(se)
+```
+
+# Using Wald Test
+
+By default, a likelihood ratio test is used. You can also apply a
+Wald test:
+
+```{r wald}
+se_wald <- testRhythmicity(se, method = "Wald")
+topCpGs(se_wald, n = 5)
+```
+
+# Session Info
+
+```{r session}
+sessionInfo()
+```
