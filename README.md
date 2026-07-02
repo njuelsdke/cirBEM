@@ -4,7 +4,7 @@
       <img src="man/figures/logo.png" width="150" alt="cirBEM logo" />
     </td>
     <td>
-      <h1>cirBEM: beta-regression cosinor models for circadian methylation analysis</h1>
+      <h1>cirBEM: Circadian rhythm detection for methylation array data</h1>
     </td>
   </tr>
 </table>
