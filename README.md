@@ -30,23 +30,10 @@ status.
 Install the package from source:
 
 ```r
-install.packages(
-    "cirBEM",
-    repos = NULL,
-    type = "source"
-)
+install.packages("remotes")
+remotes::install_github("njuelsdke/cirBEM")
 ```
 
-If installing from a local package directory:
-
-```r
-install.packages(
-    "D:/data/data/uth/rythm/cirBEM",
-    repos = NULL,
-    type = "source",
-    INSTALL_opts = "--preclean"
-)
-```
 
 ## Usage
 
